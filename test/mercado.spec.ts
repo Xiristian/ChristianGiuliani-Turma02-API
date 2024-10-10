@@ -10,7 +10,7 @@ describe('Mercado', () => {
   let mercadoId = null;
   let frutaId = null;
 
-  p.request.setDefaultTimeout(30000);
+  p.request.setDefaultTimeout(10000);
 
   beforeAll(() => p.reporter.add(rep));
   afterAll(() => p.reporter.end());
