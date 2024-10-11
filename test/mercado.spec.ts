@@ -7,10 +7,14 @@ describe('Mercado', () => {
   const p = pactum;
   const rep = SimpleReporter;
   const baseUrl = 'https://api-desafio-qa.onrender.com';
-  let mercadoId = null;
-  let frutaId = null;
+  let mercadoId = 1;
+  let frutaId = 1;
+  const fruta = {
+    nome: faker.food.fruit(),
+    valor: (Math.random() * 10).toFixed(0)
+  };
 
-  p.request.setDefaultTimeout(10000);
+  p.request.setDefaultTimeout(5000);
 
   beforeAll(() => p.reporter.add(rep));
   afterAll(() => p.reporter.end());
@@ -49,10 +53,7 @@ describe('Mercado', () => {
         .spec()
         .post(`${baseUrl}/mercado/${mercadoId}/produtos/hortifruit/frutas`)
         .expectStatus(StatusCodes.CREATED)
-        .withBody({
-          nome: faker.food.fruit(),
-          valor: (Math.random() * 10).toFixed(0)
-        })
+        .withBody(fruta)
         .expectJsonSchema({
           $schema: 'http://json-schema.org/draft-04/schema#',
           type: 'object',
@@ -81,17 +82,11 @@ describe('Mercado', () => {
         .returns('product_item.id');
     });
 
-    it('Deletar fruta', async () => {
-      const teste = await p
+    it('Retornar todas as frutas', async () => {
+      const frutaRetornada = await p
         .spec()
-        .delete(
-          `${baseUrl}/mercado/${mercadoId}/produtos/hortifruit/frutas/${frutaId}`
-        )
-        .expectStatus(StatusCodes.CREATED)
-        .withBody({
-          nome: faker.food.fruit(),
-          valor: (Math.random() * 10).toFixed(0)
-        })
+        .get(`${baseUrl}/mercado/${mercadoId}/produtos/hortifruit/frutas`)
+        .expectStatus(StatusCodes.OK)
         .expectJsonSchema({
           $schema: 'http://json-schema.org/draft-04/schema#',
           type: 'object',
@@ -99,26 +94,54 @@ describe('Mercado', () => {
             message: {
               type: 'string'
             },
-            product_item: {
+            produtos: {
               type: 'object',
               properties: {
-                id: {
-                  type: 'integer'
-                },
-                nome: {
-                  type: 'string'
-                },
-                valor: {
-                  type: 'string'
+                frutas: {
+                  type: 'array',
+                  items: [
+                    {
+                      type: 'object',
+                      properties: {
+                        id: {
+                          type: 'integer'
+                        },
+                        nome: {
+                          type: 'string'
+                        },
+                        valor: {
+                          type: 'string'
+                        }
+                      },
+                      required: ['id', 'nome', 'valor']
+                    }
+                  ]
                 }
               },
-              required: ['id', 'nome', 'valor']
+              required: ['frutas']
             }
           },
-          required: ['message', 'product_item']
+          required: ['message', 'produtos']
         })
-        .returns('');
-      console.log('Delete', teste);
+        .returns('produtos.frutas[0]');
+      expect(frutaRetornada.nome).toStrictEqual(fruta.nome);
+      expect(frutaRetornada.valor).toStrictEqual(fruta.valor);
+    });
+
+    it('Deletar fruta', async () => {
+      await p
+        .spec()
+        .delete(
+          `${baseUrl}/mercado/${mercadoId}/produtos/hortifruit/frutas/${frutaId}`
+        )
+        .expectStatus(StatusCodes.OK)
+        .withBody({
+          nome: faker.food.fruit(),
+          valor: (Math.random() * 10).toFixed(0)
+        })
+        .expectJson({
+          message: `frutas com ID ${frutaId} foi removido com sucesso.`
+        });
     });
   });
 });
